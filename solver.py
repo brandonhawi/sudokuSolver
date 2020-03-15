@@ -1,22 +1,5 @@
-# board = [[5, 3, 0, 0, 7, 0, 0, 0, 0],
-#          [6, 0, 0, 1, 9, 5, 0, 0, 0],
-#          [0, 9, 8, 0, 0, 0, 0, 6, 0],
-#          [8, 0, 0, 0, 6, 0, 0, 0, 3],
-#          [4, 0, 0, 8, 0, 3, 0, 0, 1],
-#          [7, 0, 0, 0, 2, 0, 0, 0, 6],
-#          [0, 6, 0, 0, 0, 0, 2, 8, 0],
-#          [0, 0, 0, 4, 1, 9, 0, 0, 5],
-#          [0, 0, 0, 0, 8, 0, 0, 7, 9]]
+board = list()
 
-board = [[0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,3,0,8,5],
-        [0,0,1,0,2,0,0,0,0],
-        [0,0,0,5,0,7,0,0,0],
-        [0,0,4,0,0,0,1,0,0],
-        [0,9,0,0,0,0,0,0,0],
-        [5,0,0,0,0,0,0,7,3],
-        [0,0,2,0,1,0,0,0,0],
-        [0,0,0,0,4,0,0,0,9]]
 
 def printBoard():
     print("-----------------")
@@ -64,7 +47,6 @@ def solve(row, col):
         if(isOpen(row, col)):
             if isValid(row, col, posValue):
                 board[row][col] = posValue
-                #printBoard()
                 if row+1 == 9 and col+1 == 9:
                     return True
                 elif col+1 == 9:
@@ -91,7 +73,8 @@ def isOpen(row, col):
     return board[row][col] == 0
 
 
-if __name__ == "__main__":
-    #printBoard()
+def solveBoard(inputBoard):
+    global board 
+    board = inputBoard
     solve(0, 0)
-    printBoard()
+    return board

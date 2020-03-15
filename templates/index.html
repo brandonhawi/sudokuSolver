@@ -1,0 +1,21 @@
+<!doctype html>
+
+<head>
+    <title>Sudoku Solver</title>
+</head>
+
+<body>
+    <h1>Hello, and welcome to the Sudoku Solver</h1>
+    <table>
+        {% for row in board %}
+        <tr>
+            {% for col in row %}
+            <td>
+                {{ col }}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/solve">Click here to solve this puzzle!</button>
+</body>
