@@ -2,20 +2,72 @@
 
 <head>
     <title>Sudoku Solver</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"
+        integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+        var socket = io();
+        socket.on('connect', function () {
+            socket.emit('json', { data: 'I\'m connected!' });
+        });
+        socket.on('myResponse', function () {
+            console.log("Received your message!")
+        });
+        socket.on('boardChange', function (row, col, posValue) {
+            console.log(`box${row}${col} will be set to ${posValue}`);
+            $(`#box${row}${col}`).text(posValue);
+            $(`#box${row}${col}`).css("color", "red");
+        });
+    </script>
+    <style>
+        td {
+            padding: 5px 14px;
+            border: 1px solid #000;
+            background-color: #F0FFFF;
+        }
+
+        table {
+            border: 3px solid #000;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px;
+        }
+
+        td:nth-of-type(3),
+        td:nth-of-type(6) {
+            border-right: 3px solid #000;
+        }
+
+        tr:nth-of-type(3),
+        tr:nth-of-type(6) {
+            border-bottom: 3px solid #000;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Hello, and welcome to the Sudoku Solver</h1>
-    <table>
-        {% for row in board %}
-        <tr>
-            {% for col in row %}
-            <td>
-                {{ col }}
-            </td>
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    </table>
-    <a href="/solve">Click here to solve this puzzle!</button>
+    <div class="container">
+        <div class="row d-flex justify-content-center">
+            <h1 class="display-4">Sudoku Solver</h1>
+        </div>
+        <div class="row d-flex justify-content-center">
+            <table>
+                {% for row in range(board|length) %}
+                <tr>
+                    {% for col in range(board[row]|length) %}
+                    <td id="box{{row}}{{col}}">
+                        {{ board[row][col] }}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="row d-flex justify-content-center">
+            <a class="btn btn-danger m-3" href="/reset">RESET</a>
+            <a class="btn btn-primary m-3" href="/solve">Click here to solve this puzzle!</a>
+        </div>
+
+    </div>
 </body>
