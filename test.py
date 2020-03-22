@@ -20,7 +20,7 @@ initialBoard = [[5, 3, 0, 0, 7, 0, 0, 0, 0],
                 [0, 0, 0, 0, 8, 0, 0, 7, 9]]
 
 board = list()
-
+firstGen = list()
 # board = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
 #          [0, 0, 0, 0, 0, 0, 0, 0, 0],
 #          [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -138,7 +138,7 @@ def randomFill(localBoard):
 
 def createFirstGeneration():
     generation = list()
-    for i in range(5040):
+    for i in range(10):
         localBoard = copy.deepcopy(board)
         generation.append(randomFill(localBoard))
     return generation
@@ -185,7 +185,7 @@ def isGivenColValid(board, row, col):
 
 def isValidRandomBox(localBoard, row, col):
     global board
-    return (board[row][col] != 0) or (isGivenBoxValid(localBoard, row, col) and isGivenRowValid(localBoard, row, col) and isGivenColValid(localBoard, row, col))
+    return (board[row][col] != 0) or isGivenBoxValid(localBoard, row, col)
 
 
 def calculateFitness(board):
@@ -203,17 +203,20 @@ def solveStochastic(boards):
         fitness = calculateFitness(boards[index])
         if fitness == 81:
             return boards[index]
-        printBoard(boards[index])
-        print("Fitness is: {}".format(fitness))
         fitnessTuple = (index, fitness)
         fitnesses.append(fitnessTuple)
-    fitnesses.sort(key=lambda x: x[1])
+    fitnesses.sort(key=lambda x: -x[1])
     fittestOrganisms = list()
-    for i in fitnesses[:8]:
+    for i in fitnesses[:4]:
         fittestOrganisms.append(boards[i[0]])
     nextGeneration = breed(fittestOrganisms)
-    return solveStochastic(nextGeneration)
-
+    fitnesses.reverse()
+    for i in range(6):
+        leastFitIndex = fitnesses[i][0]
+        boards[leastFitIndex] = nextGeneration[i]
+        socketio.emit("generationChange", fitnesses[i])
+    time.sleep(5)
+    return solveStochastic(boards)
 
 def breed(organisms):
     offspring = list()
@@ -231,25 +234,10 @@ def breedTwoOrganisms(mom, dad):
     for rowIndex in range(len(mom)):
         for colIndex in range(len(mom[rowIndex])):
             if(isValidRandomBox(mom, rowIndex, colIndex)):
-                if (isValid(child, rowIndex, colIndex, mom[rowIndex][colIndex])):
-                    child[rowIndex][colIndex] = mom[rowIndex][colIndex]
-                else:
-                    for i in range(1, 10):
-                        if (isValid(mom, rowIndex, colIndex, i) or isValid(dad, rowIndex, colIndex, i)):
-                            child[rowIndex][colIndex] = i
-                    child[rowIndex][colIndex] = random.randint(1, 9)
+                child[rowIndex][colIndex] = mom[rowIndex][colIndex]
             elif (isValidRandomBox(dad, rowIndex, colIndex)):
-                if (isValid(child, rowIndex, colIndex, dad[rowIndex][colIndex])):
-                    child[rowIndex][colIndex] = dad[rowIndex][colIndex]
-                else:
-                    for i in range(1, 10):
-                        if (isValid(mom, rowIndex, colIndex, i) or isValid(dad, rowIndex, colIndex, i)):
-                            child[rowIndex][colIndex] = i
-                    child[rowIndex][colIndex] = random.randint(1, 9)
+                child[rowIndex][colIndex] = dad[rowIndex][colIndex]
             else:
-                for i in range(1, 10):
-                    if (isValid(mom, rowIndex, colIndex, i) or isValid(dad, rowIndex, colIndex, i)):
-                        child[rowIndex][colIndex] = i
                 child[rowIndex][colIndex] = random.randint(1, 9)
     return child
 
@@ -282,6 +270,12 @@ def reset():
     reset_board()
     return redirect(url_for('hello_world'))
 
+@app.route('/stochastic')
+def stochasticRoute():
+    global firstGen
+    firstGen = createFirstGeneration()
+    return render_template('stochastic.html', boards=firstGen)
+
 
 @socketio.on('json')
 def handle_json(json):
@@ -300,13 +294,12 @@ def handle_delay_change(slider_value):
 def solver():
     solveBoard()
 
-
 @socketio.on('stochastic')
 def stochastic():
     global board
-    firstGen = createFirstGeneration()
+    global firstGen
     board = solveStochastic(firstGen)
-    return redirect(url_for('hello_world'))
+    return redirect('/')
 
 
 def reset_board():

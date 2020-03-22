@@ -1,0 +1,52 @@
+<!doctype html>
+
+<head>
+    <title>Stochastic Search</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"
+        integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+        var socket = io();
+        socket.on("generationChange", function(index, fitness) {
+            $(`#circle${index}`).text(fitness);
+            $(`#circle${index}`).css('background-color', 'green');
+            console.log(`#circle${index} will change to ${fitness}`);
+            setTimeout(function() {
+                $(`#circle${index}`).css('background-color', 'red');
+            }, 2000);
+        });
+        $(document).ready(function() {
+            socket.emit("stochastic")
+        });
+    </script>
+    <style>
+        .circle {
+            width: 100px;
+            height: 100px;
+            background-color: red;
+            color: white;
+            border-radius: 25px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-4">
+        <div class="row d-flex justify-content-center">
+            <h1 class="display-4">Stochastic Illustration</h1>
+        </div>
+        <div class="row d-flex justify-content-center">
+            {% for index in range(boards|length) %}
+                <div class="circle d-flex justify-content-center align-items-center m-4" id="circle{{index}}">
+                    0
+                </div>
+            {% endfor %}
+        </div>
+        <div class="row d-flex justify-content-center">
+            <a class="btn btn-danger m-3" href="/">Go Back to Index</a>
+        </div>
+    </div>
+</body>
