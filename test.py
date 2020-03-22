@@ -3,11 +3,10 @@ from flask_socketio import SocketIO, send, emit
 import time
 import copy
 import random
+import solver
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
-
-delay = 0.1
 
 initialBoard = [[5, 3, 0, 0, 7, 0, 0, 0, 0],
                 [6, 0, 0, 1, 9, 5, 0, 0, 0],
@@ -21,15 +20,7 @@ initialBoard = [[5, 3, 0, 0, 7, 0, 0, 0, 0],
 
 board = list()
 firstGen = list()
-# board = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
-#          [0, 0, 0, 0, 0, 0, 0, 0, 0],
-#          [0, 0, 0, 0, 0, 0, 0, 0, 0],
-#          [0, 0, 0, 0, 0, 0, 0, 0, 0],
-#          [0, 0, 0, 0, 0, 0, 0, 0, 0],
-#          [0, 0, 0, 0, 0, 0, 0, 0, 0],
-#          [0, 0, 0, 0, 0, 0, 0, 0, 0],
-#          [0, 0, 0, 0, 0, 0, 0, 0, 0],
-#          [0, 0, 0, 0, 0, 0, 0, 0, 0]]
+currentSolver = None
 
 # board = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
 #              [0, 0, 0, 0, 0, 3, 0, 8, 5],
@@ -77,55 +68,11 @@ def isValidBox(board, row, col, val):
 # TODO: Different algorithms (click buttons to solve with other algorithms)
 # TODO: Randomly generate a puzzle (unique solution)
 
-
-def solve(row, col):
-    global board
-    for posValue in range(1, 10):
-        if(isOpen(row, col)):
-            socketio.emit('boardChange', (row, col, posValue))
-            time.sleep(delay)
-            if isValid(board, row, col, posValue):
-                board[row][col] = posValue
-
-                if row+1 == 9 and col+1 == 9:
-                    return True
-                elif col+1 == 9:
-                    if solve(row+1, 0):
-                        return True
-                    else:
-                        board[row][col] = 0
-                        socketio.emit('boardChange', (row, col, 0))
-                        time.sleep(delay)
-                else:
-                    if solve(row, col+1):
-                        return True
-                    else:
-                        board[row][col] = 0
-                        socketio.emit('boardChange', (row, col, 0))
-                        time.sleep(delay)
-        else:
-            if row + 1 == 9 and col + 1 == 9:
-                return True
-            elif col + 1 == 9:
-                return solve(row+1, 0)
-            else:
-                return solve(row, col+1)
-    socketio.emit('boardChange', (row, col, 0))
-    time.sleep(delay)
-    return False
-
-
 def isOpenOnBoard(localBoard, row, column):
     return isOpen(row, column) and localBoard[row][column]
 
-
 def isOpen(row, col):
     return board[row][col] == 0
-
-
-def solveBoard():
-    solve(0, 0)
-
 
 def randomFill(localBoard):
     for row in range(len(localBoard)):
@@ -142,7 +89,6 @@ def createFirstGeneration():
         localBoard = copy.deepcopy(board)
         generation.append(randomFill(localBoard))
     return generation
-
 
 def assignToBoard(row, col, value):
     board[row][col] = value
@@ -259,24 +205,6 @@ def printBoard(board):
     for row in board:
         print(row)
 
-
-@app.route('/')
-def hello_world():
-    return render_template('index.html', board=board)
-
-
-@app.route('/reset')
-def reset():
-    reset_board()
-    return redirect(url_for('hello_world'))
-
-@app.route('/stochastic')
-def stochasticRoute():
-    global firstGen
-    firstGen = createFirstGeneration()
-    return render_template('stochastic.html', boards=firstGen)
-
-
 @socketio.on('json')
 def handle_json(json):
     print('received json: ' + str(json))
@@ -284,15 +212,17 @@ def handle_json(json):
 
 
 @socketio.on('delayChange')
-def handle_delay_change(slider_value):
-    slider_value = int(slider_value)
-    new_delay = 1/(100**slider_value)
-    adjust_delay(new_delay)
-
+def handle_delay_change(sliderValue):
+    sliderValue = int(sliderValue)
+    newDelay = 1/(100**sliderValue)
+    currentSolver.changeDelay(newDelay)
 
 @socketio.on('solve')
-def solver():
-    solveBoard()
+def backtrackSolve():
+    global board
+    global currentSolver
+    currentSolver = solver.backtrackSolver(board, socketio)
+    currentSolver.solve(0, 0)
 
 @socketio.on('stochastic')
 def stochastic():
@@ -311,7 +241,21 @@ def adjust_delay(new_delay):
     global delay
     delay = new_delay
 
+@app.route('/')
+def index():
+    reset_board()
+    return render_template('index.html', board=board)
+
+@app.route('/reset')
+def reset():
+    reset_board()
+    return redirect(url_for('index'))
+
+@app.route('/stochastic')
+def stochasticRoute():
+    global firstGen
+    firstGen = createFirstGeneration()
+    return render_template('stochastic.html', boards=firstGen)
 
 if __name__ == '__main__':
-    reset_board()
     socketio.run(app, debug=True)
