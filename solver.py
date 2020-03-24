@@ -1,4 +1,27 @@
 import time
+import copy
+import random
+
+class Board:
+    def __init__(self, initBoard, fitness=0):
+        self.boardArray = initBoard
+        self.fitness = fitness
+
+    def getFitness(self):
+        return self.fitness
+    
+    def setFitness(self, newFitness):
+        self.fitness = newFitness
+
+    fitness = property(getFitness, setFitness)
+
+    def getBoardArray(self):
+        return self.boardArray
+
+    def setBoardArray(self, newBoardArray):
+        self.boardArray = newBoardArray
+    
+    boardArray = property(getBoardArray, setBoardArray)
 
 class backtrackSolver:
     def __init__(self, classBoard, givenSocket):
@@ -38,7 +61,7 @@ class backtrackSolver:
         self.board[row][col] = newNumber
 
     def displayBoardChange(self, row, col, possibleNumber):
-        self.socket.emit('boardChange', (row, col, possibleNumber))
+        self.socket.emit('cellChange', (row, col, possibleNumber))
         time.sleep(self.delay)
 
     def changeBoardAndDisplay(self, row, col, newNumber):
@@ -101,27 +124,41 @@ class stochasticSolver:
         self.socket = givenSocket
         self.delay = 1
     
-    def solve(self, generation):
-        fitnesses = list()
-        for index in range(len(generation)):
-            fitness = self.calculateFitness(generation[index])
-            if fitness == 81:
-                return generation[index]
-            fitnessTuple = (index, fitness)
-            fitnesses.append(fitnessTuple)
-        fitnesses.sort(key=lambda x: -x[1])
-        fittestOrganisms = list()
-        for i in fitnesses[:4]:
-            fittestOrganisms.append(generation[i[0]])
-        nextGeneration = breed(fittestOrganisms)
-        fitnesses.reverse()
-        for i in range(6):
-            leastFitIndex = fitnesses[i][0]
-            generation[leastFitIndex] = nextGeneration[i]
-            socketio.emit("generationChange", fitnesses[i])
-        time.sleep(5)
-        return self.solve(generation)
+    def solve(self, generationSize):
+        firstGeneration = self.createRandomSizeNGeneration(generationSize)
+        self.displayGeneration(firstGeneration)
+        return self.evolve(firstGeneration)
+
+    def createRandomSizeNGeneration(self, n):
+        generation = list()
+        for i in range(n):
+            cloneBoard = self.copyInitBoard()
+            randomizedBoard = self.randomFill(cloneBoard)
+            generation.append(randomizedBoard)
+        return generation
     
+    def randomFill(self, givenBoard):
+        givenBoardArray = givenBoard.boardArray
+        for rowIndex in range(len(givenBoardArray)):
+            for colIndex in range(len(givenBoardArray[rowIndex])):
+                if(self.isOpen(givenBoard, rowIndex, colIndex)):
+                    randValue = random.randint(1, 9)
+                    givenBoardArray[rowIndex][colIndex] = randValue
+        return givenBoard
+
+    def evolve(self, generation):
+        for currentBoard in generation:
+            currentBoard.fitness = self.calculateFitness(currentBoard)
+            if currentBoard.fitness == 81:
+                return currentBoard.boardArray
+        sortedGeneration = self.sortByHighestFitness(generation)
+        breededOrganisms = self.breedNFittestOrganisms(4, sortedGeneration)
+        nextGeneration = self.createNextGeneration(sortedGeneration, breededOrganisms)
+        return self.evolve(nextGeneration)
+    
+    def sortByHighestFitness(self, generation):
+        return generation.sort(key=lambda x: -x.fitness)
+
     def calculateFitness(self, organism):
         fitness = 0
         for row in range(len(organism)):
@@ -130,10 +167,22 @@ class stochasticSolver:
                     fitness += 1
         return fitness
     
+    def breedNFittestOrganisms(self, n, sortedGeneration):
+        fittestOrganisms = self.getNFittestOrganisms(n, sortedGeneration)
+        breededOrganisms = self.breed(fittestOrganisms)
+        return breededOrganisms
+
+    def getNFittestOrganisms(self, n, sortedGeneration):
+        fittestOrganisms = list()
+        for i in sortedGeneration[:n]:
+            fittestOrganisms.append(i)
+        return fittestOrganisms
+
     def isInInitialBoard(self, row, col, organism):
-        return self.board[row][col] == organism[row][col]
+        return self.board.boardArray[row][col] == organism.boardArray[row][col]
 
     def isFit(self, row, col, organism):
+        organism = organism.boardArray
         valueInQuestion = organism[row][col]
         rowBox = row // 3
         colBox = col // 3
@@ -147,3 +196,44 @@ class stochasticSolver:
                 if organism[i][j] == valueInQuestion:
                     count += 1
         return count <= 1
+    
+    def breed(self, organisms):
+        offspring = list()
+        for i in range(len(organisms) - 1):
+            for j in range(i+1, len(organisms)):
+                parent1 = organisms[i]
+                parent2 = organisms[j]
+                child = self.breedTwoOrganisms(parent1, parent2)
+                offspring.append(child)
+        return offspring
+
+    def breedTwoOrganisms(self, parent1, parent2):
+        child = self.copyInitBoard()
+        childArray = child.boardArray
+        for rowIndex in range(len(childArray)):
+            for colIndex in range(len(childArray[rowIndex])):
+                if (self.isOpen(child, rowIndex, colIndex)):
+                    if(self.isFit(rowIndex, colIndex, parent1)):
+                        childArray[rowIndex][colIndex] = parent1.boardArray[rowIndex][colIndex]
+                    elif (self.isFit(rowIndex, colIndex, parent2)):
+                        childArray[rowIndex][colIndex] = parent2.boardArray[rowIndex][colIndex]
+                    else:
+                        childArray[rowIndex][colIndex] = random.randint(1, 9)
+        return child
+    
+    def isOpen(self, givenBoard, rowIndex, colIndex):
+        return givenBoard.boardArray[rowIndex][colIndex] != 0
+
+    def copyInitBoard(self):
+        clonedBoardArray = copy.deepcopy(self.board.boardArray)
+        return Board(clonedBoardArray)
+
+    def createNextGeneration(self, sortedGeneration, breededOrganisms):
+        numToBeReplaced = len(breededOrganisms)
+        offset = len(sortedGeneration) - numToBeReplaced
+        for index in range(len(breededOrganisms)):
+            sortedGeneration[index + offset] = breededOrganisms[index]
+        return sortedGeneration
+    
+    def displayGeneration(self, generation):
+        self.socket.emit("displayGeneration", generation)

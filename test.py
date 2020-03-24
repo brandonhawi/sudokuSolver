@@ -227,9 +227,10 @@ def backtrackSolve():
 @socketio.on('stochastic')
 def stochastic():
     global board
-    global firstGen
-    board = solveStochastic(firstGen)
-    return redirect('/')
+    global currentSolver
+    initBoard = solver.Board(board)
+    currentSolver = solver.stochasticSolver(initBoard, socketio)
+    currentSolver.solve(10)
 
 
 def reset_board():

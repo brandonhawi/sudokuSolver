@@ -8,18 +8,29 @@
         integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"
         integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script type="text/babel" src="{{url_for('static', filename = 'cell.js' ) }}"></script>
+    <script type="text/babel" src="{{url_for('static', filename = 'board.js' ) }}"></script>
+    <script type="text/babel" src="{{url_for('static', filename = 'generation.js' ) }}"></script>
     <script type="text/javascript" charset="utf-8">
         var socket = io();
-        socket.on("generationChange", function(index, fitness) {
+        socket.on("generationChange", function (index, fitness) {
             $(`#circle${index}`).text(fitness);
             $(`#circle${index}`).css('background-color', 'green');
             console.log(`#circle${index} will change to ${fitness}`);
-            setTimeout(function() {
+            setTimeout(function () {
                 $(`#circle${index}`).css('background-color', 'red');
             }, 2000);
         });
         $(document).ready(function() {
-            socket.emit("stochastic")
+            $("#solveButton").on("click", function() {
+                socket.emit("stochastic");
+            });
+        });
+        socket.on("displayGeneration", function(generation) {
+            console.log("Generation will be: " + generation);
         });
     </script>
     <style>
@@ -36,17 +47,11 @@
 <body>
     <div class="container py-4">
         <div class="row d-flex justify-content-center">
-            <h1 class="display-4">Stochastic Illustration</h1>
+            <h1 class="display-4">Evolutionary Algorithm</h1>
+            <button class="btn btn-primary" id="solveButton"">Solve</button>
         </div>
-        <div class="row d-flex justify-content-center">
-            {% for index in range(boards|length) %}
-                <div class="circle d-flex justify-content-center align-items-center m-4" id="circle{{index}}">
-                    0
-                </div>
-            {% endfor %}
-        </div>
-        <div class="row d-flex justify-content-center">
-            <a class="btn btn-danger m-3" href="/">Go Back to Index</a>
+        <div class="generation_container">
+            
         </div>
     </div>
 </body>
