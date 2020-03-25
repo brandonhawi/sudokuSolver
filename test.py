@@ -254,9 +254,10 @@ def reset():
 
 @app.route('/stochastic')
 def stochasticRoute():
+    reset_board()
     global firstGen
     firstGen = createFirstGeneration()
-    return render_template('stochastic.html', boards=firstGen)
+    return render_template('stochastic.html')
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

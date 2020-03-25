@@ -1,27 +1,34 @@
+from flask import json
 import time
 import copy
 import random
 
 class Board:
     def __init__(self, initBoard, fitness=0):
-        self.boardArray = initBoard
-        self.fitness = fitness
+        self._boardArray = initBoard
+        self._fitness = fitness
 
     def getFitness(self):
-        return self.fitness
+        return self._fitness
     
     def setFitness(self, newFitness):
-        self.fitness = newFitness
+        self._fitness = newFitness
 
     fitness = property(getFitness, setFitness)
 
     def getBoardArray(self):
-        return self.boardArray
+        return self._boardArray
 
     def setBoardArray(self, newBoardArray):
-        self.boardArray = newBoardArray
+        self._boardArray = newBoardArray
     
     boardArray = property(getBoardArray, setBoardArray)
+
+    def serialize(self):
+        return {
+            'boardArray': self.boardArray,
+            'fitness': self.fitness
+        }
 
 class backtrackSolver:
     def __init__(self, classBoard, givenSocket):
@@ -161,8 +168,8 @@ class stochasticSolver:
 
     def calculateFitness(self, organism):
         fitness = 0
-        for row in range(len(organism)):
-            for col in range(len(organism[row])):
+        for row in range(len(organism.boardArray)):
+            for col in range(len(organism.boardArray[row])):
                 if(self.isInInitialBoard(row, col, organism) or self.isFit(row, col, organism)):
                     fitness += 1
         return fitness
@@ -236,4 +243,5 @@ class stochasticSolver:
         return sortedGeneration
     
     def displayGeneration(self, generation):
+        generation = list(map(lambda x: x.serialize(), generation))
         self.socket.emit("displayGeneration", generation)

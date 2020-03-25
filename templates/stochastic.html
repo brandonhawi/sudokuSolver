@@ -31,17 +31,10 @@
         });
         socket.on("displayGeneration", function(generation) {
             console.log("Generation will be: " + generation);
+            console.log(generation);
         });
     </script>
-    <style>
-        .circle {
-            width: 100px;
-            height: 100px;
-            background-color: red;
-            color: white;
-            border-radius: 25px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='board.css')}}"> 
 </head>
 
 <body>
@@ -50,7 +43,7 @@
             <h1 class="display-4">Evolutionary Algorithm</h1>
             <button class="btn btn-primary" id="solveButton"">Solve</button>
         </div>
-        <div class="generation_container">
+        <div class="generation_container row">
             
         </div>
     </div>
