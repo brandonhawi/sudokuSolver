@@ -229,8 +229,13 @@ def stochastic():
     global board
     global currentSolver
     initBoard = solver.Board(board)
+    print("Initial Board: ")
+    printBoard(initBoard.boardArray)
     currentSolver = solver.stochasticSolver(initBoard, socketio)
-    currentSolver.solve(10)
+    fullyEvolvedBoard = currentSolver.solve(10000)
+    print("Fully Evolved Board: ")
+    printBoard(fullyEvolvedBoard.boardArray)
+    print("Fully Evolved Board's Fitness: {}".format(fullyEvolvedBoard.fitness))
 
 
 def reset_board():
