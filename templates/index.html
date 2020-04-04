@@ -34,9 +34,6 @@
             $("#solve").on("click", function () {
                 socket.emit('solve')
             });
-            $("#stochastic").on("click", function () {
-                socket.emit("stochastic")
-            });
         });
     </script>
     <script type="text/babel">
@@ -54,19 +51,6 @@
         <div class="row d-flex justify-content-center board_container">
 
         </div>
-        <!-- <div class="row d-flex justify-content-center">
-            <table>
-                {% for row in range(board|length) %}
-                <tr>
-                    {% for col in range(board[row]|length) %}
-                    <td id="box{{row}}{{col}}">
-                        {{ board[row][col] }}
-                    </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </table>
-        </div> -->
         <div class="row d-flex justify-content-center mt-3">
             Adjust Speed:
         </div>
@@ -78,7 +62,6 @@
         <div class="row d-flex justify-content-center">
             <a class="btn btn-danger m-3" href="/reset">RESET</a>
             <button id="solve" class="btn btn-primary m-3">Click here to solve this puzzle!</button>
-            <a class="btn btn-primary m-3" href="/stochastic">Stochastic Search!</a>
         </div>
 
     </div>
