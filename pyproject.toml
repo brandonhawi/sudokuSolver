@@ -1,0 +1,18 @@
+[project]
+name = "sudoku-solver"
+version = "0.1.0"
+description = "A web application with a React front end and Flask back end that solves Sudoku puzzles"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "flask",
+    "flask-socketio",
+    "python-dotenv",
+]
+
+[dependency-groups]
+dev = [
+    "autopep8",
+    "pylint",
+    "rope",
+]

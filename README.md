@@ -6,8 +6,10 @@ This is a web application with a React front end and Flask back end that solves 
 
 ## Dev Environment Setup
 
-This repository uses `pipenv` to manage packages (installed using `pip install pipenv`). 
+This repository uses [uv](https://docs.astral.sh/uv/) to manage packages and the virtual environment.
 
-After cloning the repository, a simple `pipenv install` will create a virtual environment for the application if it does not already exist and install all necessary packages. 
+After cloning the repository, a simple `uv sync` will create a virtual environment for the application if it does not already exist and install all necessary packages.
 
-Make sure that you use `pipenv` to install any new packages added to the solution. 
+To run the app: `uv run flask run`
+
+Make sure that you use `uv add <package>` to install any new packages added to the solution (or `uv add --dev <package>` for dev tools). 
