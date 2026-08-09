@@ -14,7 +14,7 @@ import logging
 import os
 
 import httpx
-from mcp.server import MCPServer
+from mcp.server.fastmcp import FastMCP
 
 from sudoku.game import render_grid
 
@@ -22,8 +22,9 @@ GAME_URL = os.environ.get("SUDOKU_GAME_URL", "http://127.0.0.1:5001")
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-mcp = MCPServer(
+mcp = FastMCP(
     "sudoku",
+    log_level="WARNING",
     instructions=(
         "Controls for a live Sudoku game. Call show_board to see the current "
         "puzzle, then place_number to fill in cells. Rows and columns are "
