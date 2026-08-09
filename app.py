@@ -1,74 +1,92 @@
-from flask import Flask, render_template, redirect, url_for
-from flask_socketio import SocketIO, send, emit
-import copy
-from shared.board import Board
-from algorithms import backtrack
+"""Flask server holding the one live Sudoku game.
+
+The browser UI and the MCP server are both clients of this API, so a move made
+by a language model shows up in the browser and vice versa.
+"""
+
+import threading
+
+from flask import Flask, jsonify, render_template, request
+
+from sudoku.game import Game, MoveError, normalize_difficulty
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
 
-initialBoardArray = [[5, 3, 0, 0, 7, 0, 0, 0, 0],
-                     [6, 0, 0, 1, 9, 5, 0, 0, 0],
-                     [0, 9, 8, 0, 0, 0, 0, 6, 0],
-                     [8, 0, 0, 0, 6, 0, 0, 0, 3],
-                     [4, 0, 0, 8, 0, 3, 0, 0, 1],
-                     [7, 0, 0, 0, 2, 0, 0, 0, 6],
-                     [0, 6, 0, 0, 0, 0, 2, 8, 0],
-                     [0, 0, 0, 4, 1, 9, 0, 0, 5],
-                     [0, 0, 0, 0, 8, 0, 0, 7, 9]]
-
-initialBoard = Board(initialBoardArray)
+_lock = threading.Lock()
+_game = None
 
 
-board = list()
-currentSolver = None
-
-# TODO: Make it interactive (full sudoku game basically)
-# TODO: Different algorithms (click buttons to solve with other algorithms)
-# TODO: Randomly generate a puzzle (unique solution)
-
-@socketio.on('json')
-def handle_json(json):
-    print('received json: ' + str(json))
-    emit('myResponse')
+def current_game():
+    global _game
+    if _game is None:
+        _game = Game("easy")
+    return _game
 
 
-@socketio.on('delayChange')
-def handle_delay_change(sliderValue):
-    sliderValue = int(sliderValue)
-    newDelay = 1/(100**sliderValue)
-    currentSolver.changeDelay(newDelay)
+@app.errorhandler(MoveError)
+def handle_move_error(error):
+    return jsonify({"error": str(error)}), 400
 
 
-@socketio.on('solve')
-def backtrackSolve():
-    global board
-    global currentSolver
-    currentSolver = backtrack.backtrackSolver(board, socketio)
-    currentSolver.solve(0, 0)
-
-def reset_board():
-    global board
-    board = copy.deepcopy(initialBoard)
-
-@app.route('/')
+@app.route("/")
 def index():
-    reset_board()
-    return render_template('index.html')
+    return render_template("index.html")
 
 
-@app.route('/reset')
-def reset():
-    reset_board()
-    return redirect(url_for('index'))
-
-# @app.route('/stochastic')
-# def stochasticRoute():
-#     reset_board()
-#     global firstGen
-#     firstGen = createFirstGeneration()
-#     return render_template('stochastic.html')
+@app.get("/api/game")
+def get_game():
+    with _lock:
+        return jsonify(current_game().serialize())
 
 
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
+@app.post("/api/game")
+def new_game():
+    global _game
+    payload = request.get_json(silent=True) or {}
+    difficulty = normalize_difficulty(payload.get("difficulty"))
+    with _lock:
+        _game = Game(difficulty)
+        return jsonify(_game.serialize())
+
+
+@app.post("/api/move")
+def move():
+    payload = request.get_json(silent=True) or {}
+    row, col = _coordinates(payload)
+    value = payload.get("value")
+    if not isinstance(value, int):
+        raise MoveError("value must be an integer between 1 and 9")
+    with _lock:
+        game = current_game()
+        game.place(row, col, value)
+        return jsonify(game.serialize())
+
+
+@app.post("/api/clear")
+def clear():
+    row, col = _coordinates(request.get_json(silent=True) or {})
+    with _lock:
+        game = current_game()
+        game.clear(row, col)
+        return jsonify(game.serialize())
+
+
+@app.post("/api/undo")
+def undo():
+    with _lock:
+        game = current_game()
+        game.undo()
+        return jsonify(game.serialize())
+
+
+def _coordinates(payload):
+    """Pull 0-indexed row/col out of a request payload."""
+    row = payload.get("row")
+    col = payload.get("col")
+    if not isinstance(row, int) or not isinstance(col, int):
+        raise MoveError("row and column must be integers")
+    return row, col
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5001)

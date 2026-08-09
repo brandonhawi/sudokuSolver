@@ -1,68 +1,34 @@
 <!doctype html>
+<html lang="en">
 
 <head>
-    <title>Sudoku Solver</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
-        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"
-        integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-    <script type="text/javascript" charset="utf-8">
-        var socket = io();
-    </script>
-    <script type="text/babel" src="{{url_for('static', filename = 'cell.js' ) }}"></script>
-    <script type="text/babel" src="{{url_for('static', filename = 'board.js' ) }}"></script>
-    <script type="text/javascript" charset="utf-8">
-        socket.on('connect', function () {
-            socket.emit('json', { data: 'I\'m connected!' });
-        });
-        socket.on('myResponse', function () {
-            console.log("Received your message!")
-        });
-        /* socket.on('boardChange', function (row, col, posValue) {
-            $(`#box${row}${col}`).text(posValue);
-            $(`#box${row}${col}`).css("color", "red");
-        }); */
-        $(document).ready(function () {
-            $("#myRange").on("input", function () {
-                socket.emit('delayChange', this.value);
-            });
-            $("#solve").on("click", function () {
-                socket.emit('solve')
-            });
-        });
-    </script>
-    <script type="text/babel">
-        const domContainer = document.querySelector('.board_container');
-        ReactDOM.render(<Board initialBoard={initialBoard} index={0}/>, domContainer);
-    </script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='board.css')}}">    
+    <meta charset="utf-8">
+    <title>Sudoku</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='board.css') }}">
 </head>
 
 <body>
-    <div class="container py-4">
-        <div class="row d-flex justify-content-center">
-            <h1 class="display-4">Sudoku Solver</h1>
-        </div>
-        <div class="row d-flex justify-content-center board_container">
+    <main>
+        <h1>Sudoku</h1>
 
-        </div>
-        <div class="row d-flex justify-content-center mt-3">
-            Adjust Speed:
-        </div>
-        <div class="row d-flex justify-content-center my-3">
-            <div class="slidecontainer">
-                <input type="range" min="1" max="10" value="1" class="slider" id="myRange">
-            </div>
-        </div>
-        <div class="row d-flex justify-content-center">
-            <a class="btn btn-danger m-3" href="/reset">RESET</a>
-            <button id="solve" class="btn btn-primary m-3">Click here to solve this puzzle!</button>
+        <table id="board"></table>
+
+        <p id="status">Loading&hellip;</p>
+
+        <div class="controls">
+            <button data-difficulty="easy">New easy game</button>
+            <button data-difficulty="medium">New medium game</button>
+            <button data-difficulty="hard">New hard game</button>
+            <button id="undo">Undo</button>
         </div>
 
-    </div>
+        <p class="hint">
+            Click a cell and type 1-9 to place a number, or backspace to clear it.
+            Moves made through the MCP server show up here automatically.
+        </p>
+    </main>
+
+    <script src="{{ url_for('static', filename='game.js') }}"></script>
 </body>
+
+</html>

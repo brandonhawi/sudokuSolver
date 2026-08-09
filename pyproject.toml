@@ -1,12 +1,13 @@
 [project]
-name = "sudoku-solver"
+name = "sudoku-game"
 version = "0.1.0"
-description = "A web application with a React front end and Flask back end that solves Sudoku puzzles"
+description = "A playable Sudoku game whose controls are exposed to language models over MCP"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "flask",
-    "flask-socketio",
+    "httpx",
+    "mcp",
     "python-dotenv",
 ]
 
