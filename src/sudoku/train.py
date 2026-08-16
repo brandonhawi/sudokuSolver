@@ -7,7 +7,7 @@ from torch import nn
 
 from sudoku.data import sample_batch
 from sudoku.evaluate import evaluate
-from sudoku.model import INPUT_DIM
+from sudoku.serving import log_solver_model
 
 
 def train(
@@ -75,12 +75,6 @@ def train(
         mlflow.log_metric("val_loss", val_loss, step=step)
         mlflow.log_metric("val_acc", val_acc, step=step)
 
-        # log from cpu so signature inference works with the numpy input_example
-        mlflow.pytorch.log_model(
-            model.to("cpu"),
-            name="model",
-            input_example=torch.randn(1, INPUT_DIM).numpy(),
-        )
-        model.to(device)
+        log_solver_model(model)
 
     return val_loss, val_acc
